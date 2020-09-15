@@ -1,0 +1,17 @@
+Mozilla doesn't release the SpiderMonkey sources as tarball, however it does
+ship a script to generate a tarball with the firefox source code.
+
+As per this, in order to make possible to use uscan to easily get the latest
+sources and to ensure that the packaged sources are coming from a trusted
+and signed original archive, this source package uses some extra tooling:
+
+ - This relies on gbp-buildpackage (a version which supports $GBP_SOURCES_DIR)
+ - To update to a new upstream release you need to use
+   `gbp import-orig` (using `--uscan` or a firefox tarball)
+ - Gbp will launch the `debian/gbp-repack-mozjs-source.sh` script as part of
+   the import process, repacking the orig.tar.xz once filtered.
+   The script in particular will:
+   + Replace the original archive with the mozjs one
+   + Filter out the debian/copyright's `Files-Excluded`
+   + Filter out the compiled files (via $FILTERED_FILES array)
+   + Copy the files $EXTRA_FILES from firefox sources to the mozjs ones

@@ -1,0 +1,25 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Thu, 27 Aug 2020 15:22:49 +0100
+Subject: Skip another timezone-related test that fails with system ICU
+
+This test depends on the precise behaviour of backward-compatible
+time zone aliases. Our system copy of ICU does not necessarily perfectly
+match whatever updates Mozilla have made to the bundled copy.
+
+Forwarded: no
+---
+ js/src/tests/jstests.list | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/js/src/tests/jstests.list b/js/src/tests/jstests.list
+index d5b7589..a2132d7 100644
+--- a/js/src/tests/jstests.list
++++ b/js/src/tests/jstests.list
+@@ -678,6 +678,7 @@ fails-if(xulRuntime.debian.DEB_HOST_ARCH_ENDIAN=="big") script test262/built-ins
+ # https://hg.mozilla.org/mozilla-central/rev/7b1a3a49547d
+ skip script non262/Date/time-zones-historic.js
+ skip script non262/Date/time-zones-imported.js
++skip script non262/Intl/DateTimeFormat/timeZone_backward_links.js
+ 
+ ###########################################################
+ # Tests disabled due to issues in test262 importer script #

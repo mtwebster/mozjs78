@@ -1,0 +1,186 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+include /usr/share/dpkg/default.mk
+include /usr/share/rustc/architecture.mk
+
+# Disable CET, until JIT is ported too, preventing accidentally
+# building incompatible binaries.
+ifeq ($(DEB_HOST_ARCH),amd64)
+export DEB_CFLAGS_MAINT_APPEND=-fcf-protection=none
+export DEB_CXXFLAGS_MAINT_APPEND=-fcf-protection=none
+endif
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# This can be disabled if the bundled icu overtakes the system version,
+# or for backporting
+WITH_SYSTEM_ICU = yes
+
+export DEB_HOST_ARCH
+# mozjs' build process does not seem to be compatible with other shells
+# like zsh
+export SHELL = /bin/sh
+export PYTHON3 = python3
+# Please tell us what you're thinking...
+export MOZ_CONFIGURE_TRACE = yes
+
+SRCDIR = $(CURDIR)/js/src
+BUILDDIR = $(CURDIR)/debian/build
+CARGO_HOME = $(BUILDDIR)/cargo-home
+CONFIGURE_FLAGS =
+RUSTFLAGS =
+
+UPSTREAM_VERSION = $(shell echo $(DEB_VERSION_UPSTREAM) | sed -e 's/[-+~].*//')
+UPSTREAM_MAJOR = $(shell echo $(UPSTREAM_VERSION) | cut -d. -f1)
+UPSTREAM_MINOR = $(shell echo $(UPSTREAM_VERSION) | cut -d. -f2)
+UPSTREAM_PATCH = $(shell echo $(UPSTREAM_VERSION) | cut -d. -f3)
+
+export MOZJS_VERSION = $(UPSTREAM_MAJOR)
+LIBNAME = libmozjs-$(MOZJS_VERSION)
+SONAME = $(LIBNAME).so.0
+
+VERSIONED_LIBNAME = \
+	$(LIBNAME).so.$(UPSTREAM_MAJOR).$(UPSTREAM_MINOR).$(UPSTREAM_PATCH)
+
+# ia64 currently has toolchain issues, so relax the link optimization
+ifneq (,$(findstring $(DEB_BUILD_ARCH),ia64))
+	DEB_CFLAGS_MAINT_APPEND += -G0
+	DEB_CXXFLAGS_MAINT_APPEND += -G0
+endif
+
+ifneq (,$(findstring $(DEB_BUILD_ARCH),sh4))
+        DEB_CFLAGS_MAINT_APPEND += -mlra
+        DEB_CXXFLAGS_MAINT_APPEND += -mlra
+endif
+export DEB_CFLAGS_MAINT_APPEND DEB_CXXFLAGS_MAINT_APPEND
+
+EXCLUDED_TESTS :=
+
+# Upstream assumes everything uses SSE mathematics, but SSE isn't in
+# Debian's baseline for i386, so we are stuck with i387 and its weird
+# 80-bit floating point registers. We can't even work around this with
+# -fexcess-precision=standard, because mozjs is C++.
+# https://bugzilla.mozilla.org/show_bug.cgi?id=1621900
+ifneq (,$(findstring $(DEB_BUILD_ARCH),i386))
+	EXCLUDED_TESTS += basic/bug653153.js
+endif
+
+ifneq (,$(findstring $(DEB_HOST_ARCH),mips mipsel mips64el))
+CONFIGURE_FLAGS += --disable-ion
+endif
+
+ifeq ($(DEB_HOST_ARCH),sh4)
+        DEB_LDFLAGS_MAINT_APPEND += -no-pie
+endif
+
+ifeq ($(WITH_SYSTEM_ICU),yes)
+CONFIGURE_FLAGS += --with-system-icu
+else
+CONFIGURE_FLAGS += --without-system-icu
+endif
+
+# riscv64 doesn't seem to handle LTO properly, causing dwz to fail
+# see https://github.com/rust-lang/rust/issues/66118#issuecomment-551446657
+# In such case, using thin LTO, fixes the problem
+ifneq (,$(findstring $(DEB_BUILD_ARCH),riscv64))
+RUSTFLAGS += -Clto=thin
+endif
+
+export RUSTFLAGS
+export CARGO_HOME
+
+%:
+	dh $@ --sourcedirectory=$(SRCDIR) --builddirectory=$(BUILDDIR) --with gnome,pkgkde-symbolshelper
+
+override_dh_clean:
+	dh_clean
+	find $(CURDIR) -name \*.pyc -exec rm {} \;
+	find $(CURDIR)/js/src/ -type l -exec rm {} \;
+	rm -f $(CURDIR)/js/src/config/nsinstall
+	rm -f $(CURDIR)/js/src/dist/bin/.purgecaches
+	rm -f  $(CURDIR)/js/src/js$(MOZJS_VERSION)-config \
+		$(CURDIR)/js/src/mozjs-$(MOZJS_VERSION).pc \
+		$(CURDIR)/js/src/symverscript
+	rm -f $(CURDIR)/js/src/config.log
+	# rm -f $(CURDIR)/js/src/configure
+	rm -fr $(CURDIR)/intl/icu/source/autom4te.cache
+	rm -fr $(CURDIR)/debian/build
+	rm -rf third_party/python/psutil/build/ third_party/python/psutil/psutil/_*.so third_party/python/psutil/tmp/
+
+override_dh_autoreconf:
+	WITH_SYSTEM_ICU=$(WITH_SYSTEM_ICU) dh_autoreconf $(CURDIR)/debian/autogen.sh
+
+# dh_auto_configure does not properly handle autoconf2.13 generated configure
+# scripts, so we call configure ourselves.
+# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=570375
+# The bundled copy of icu prefers clang, which we need to override to
+# use gcc because clang doesn't support our DEB_CFLAGS_MAINT_APPEND
+ifeq ($(origin CC),default)
+CC := $(DEB_HOST_GNU_TYPE)-gcc
+endif
+ifeq ($(origin CXX),default)
+CXX := $(DEB_HOST_GNU_TYPE)-g++
+endif
+
+override_dh_auto_configure:
+ifneq ($(WITH_SYSTEM_ICU),yes)
+	VERBOSE=1 $(PYTHON3) intl/icu_sources_data.py "$(CURDIR)"
+endif
+	mkdir -p $(BUILDDIR)
+	cd $(BUILDDIR); \
+	if env \
+		CC=$(CC) \
+		CXX=$(CXX) \
+		RUST_HOST=$(DEB_BUILD_RUST_TYPE) \
+		RUST_TARGET=$(DEB_HOST_RUST_TYPE) \
+	$(SHELL) $(SRCDIR)/configure \
+		--host=$(DEB_BUILD_GNU_TYPE) \
+		--target=$(DEB_HOST_GNU_TYPE) \
+		--prefix=/usr \
+		--libdir=/usr/lib/${DEB_HOST_MULTIARCH}/ \
+		--with-system-zlib \
+		--disable-strip \
+		--with-intl-api \
+		--enable-readline \
+		--disable-jemalloc \
+		$(CONFIGURE_FLAGS) \
+	; then \
+		echo Configure successful; \
+	else \
+		echo Configure failed with status $$?; \
+		tail -v -n +0 config.log; \
+		exit 1; \
+	fi
+
+override_dh_install:
+	# move library and create additional symlinks to standardize the file layout
+	cd $(CURDIR)/debian/tmp/usr/lib/${DEB_HOST_MULTIARCH}/ && \
+		mv libjs_static.ajs $(LIBNAME).a && \
+		mv $(LIBNAME).so $(VERSIONED_LIBNAME) && \
+		ln -s $(VERSIONED_LIBNAME) $(SONAME) && \
+		ln -s $(SONAME) $(LIBNAME).so
+	rm debian/tmp/usr/lib/${DEB_HOST_MULTIARCH}/$(LIBNAME).a
+	dh_install
+
+override_dh_missing:
+	dh_missing --fail-missing
+
+override_dh_fixperms:
+	dh_fixperms
+	chmod a-x $(CURDIR)/debian/$(LIBNAME)-dev/usr/lib/${DEB_HOST_MULTIARCH}/pkgconfig/mozjs-$(MOZJS_VERSION).pc
+
+override_dh_gnome:
+	dh_gnome --no-gnome-versions
+
+override_dh_makeshlibs:
+	dh_makeshlibs -VUpstream-Version
+
+override_dh_auto_test:
+	@:
+ifeq ($(DEB_HOST_GNU_TYPE),$(DEB_BUILD_GNU_TYPE))
+ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
+	SRCDIR=${SRCDIR} BUILDDIR=${BUILDDIR} DEB_HOST_ARCH=${DEB_HOST_ARCH} $(CURDIR)/debian/test.sh $(EXCLUDED_TESTS)
+endif
+endif

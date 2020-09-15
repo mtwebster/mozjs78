@@ -1,0 +1,27 @@
+From: Jordan Petridis <jordan@centricular.com>
+Date: Sun, 16 Feb 2020 21:42:42 +0000
+Subject: sdk/mozjs68: import a patch to workaround arm compilation issue
+
+Our glibc headers don't include the expected structs needed
+to compile the code. The primary target of this code seems
+to be Android.
+
+Bug-Upstream: https://bugzilla.mozilla.org/show_bug.cgi?id=1526653
+Origin: https://gitlab.gnome.org/GNOME/gnome-build-meta/blob/master/files/mozjs68/armv7_disable_WASM_EMULATE_ARM_UNALIGNED_FP_ACCESS.patch
+---
+ js/src/wasm/WasmSignalHandlers.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/js/src/wasm/WasmSignalHandlers.cpp b/js/src/wasm/WasmSignalHandlers.cpp
+index a6610f3..78941bf 100644
+--- a/js/src/wasm/WasmSignalHandlers.cpp
++++ b/js/src/wasm/WasmSignalHandlers.cpp
+@@ -244,7 +244,7 @@ using mozilla::DebugOnly;
+ // If you run into compile problems on a tier-3 platform, you can disable the
+ // emulation here.
+ 
+-#if defined(__linux__) && defined(__arm__)
++#if 0 && defined(__linux__) && defined(__arm__)
+ #  define WASM_EMULATE_ARM_UNALIGNED_FP_ACCESS
+ #endif
+ 

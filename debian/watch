@@ -1,0 +1,10 @@
+# As of August 2020, there is not an official release of SpiderMonkey 78
+# The tarball is built using firefox sources, excluding the unneeded files
+# as per filtering done in debian/gbp.conf
+# Also try
+# http://ftp.gnome.org/pub/gnome/teams/releng/tarballs-needing-help/mozjs/
+version=4
+opts=pgpsigurlmangle=s/$/.asc/,uversionmangle=s/esr$// \
+https://ftp.mozilla.org/pub/firefox/releases/\
+	(78\.[\d.]+)esr/source/\
+	firefox-@ANY_VERSION@\.source\.tar\.xz

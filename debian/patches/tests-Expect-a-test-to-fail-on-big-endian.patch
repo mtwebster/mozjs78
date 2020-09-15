@@ -1,0 +1,24 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Fri, 28 Sep 2018 09:51:33 +0100
+Subject: tests: Expect a test to fail on big-endian
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: no
+---
+ js/src/tests/jstests.list | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/js/src/tests/jstests.list b/js/src/tests/jstests.list
+index 7af825c..92ac3f1 100644
+--- a/js/src/tests/jstests.list
++++ b/js/src/tests/jstests.list
+@@ -670,6 +670,9 @@ fails-if(xulRuntime.debian.DEB_HOST_ARCH_CPU.match(/^i386$/)) script test262/lan
+ # NaN corner cases are different on ARM softfloat
+ fails-if(xulRuntime.debian.DEB_HOST_ARCH.match(/^armel$/)) script test262/built-ins/TypedArray/prototype/fill/fill-values-conversion-operations-consistent-nan.js
+ 
++# Assumes little-endian IEEE representation of floating point numbers
++fails-if(xulRuntime.debian.DEB_HOST_ARCH_ENDIAN=="big") script test262/built-ins/TypedArray/prototype/set/typedarray-arg-set-values-same-buffer-other-type.js
++
+ ###########################################################
+ # Tests disabled due to issues in test262 importer script #
+ ###########################################################

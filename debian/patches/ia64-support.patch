@@ -1,0 +1,37 @@
+From: Jason Duerstock <jason.duerstock@gmail.com>
+Date: Sun, 29 Apr 2018 09:16:20 -0400
+Subject: On ia64, retry failed mmap without address hint
+
+[smcv: Move the #endif so we still return a defined value on non-ia64]
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=897178
+Last-Updated: 2018-07-10
+---
+ js/src/jit/ProcessExecutableMemory.cpp | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/js/src/jit/ProcessExecutableMemory.cpp b/js/src/jit/ProcessExecutableMemory.cpp
+index 9b27439..9d86fdd 100644
+--- a/js/src/jit/ProcessExecutableMemory.cpp
++++ b/js/src/jit/ProcessExecutableMemory.cpp
+@@ -365,9 +365,21 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
+   void* p = MozTaggedAnonymousMmap(randomAddr, bytes, PROT_NONE,
+                                    MAP_NORESERVE | MAP_PRIVATE | MAP_ANON, -1,
+                                    0, "js-executable-memory");
++
++#ifndef __ia64__
+   if (p == MAP_FAILED) {
+     return nullptr;
+   }
++#else
++  if (p == MAP_FAILED) {
++    // the comment above appears to be incorrect on ia64, so retry without the hint
++    p = MozTaggedAnonymousMmap(NULL, bytes, PROT_NONE, MAP_PRIVATE | MAP_ANON,
++                               -1, 0, "js-executable-memory");
++    if (p == MAP_FAILED) {
++      return nullptr;
++    }
++  }
++#endif
+   return p;
+ }
+ 

@@ -1,0 +1,6 @@
+# Many of these tests are written with very long lines, but they do not
+# appear to be generated files
+mozjs78 source: source-is-missing js/src/*.js line length is * characters (>*)
+
+# This is implicit on the fact that we repack the signed upstream source
+mozjs78 source: orig-tarball-missing-upstream-signature mozjs78_78.*.orig.tar.xz

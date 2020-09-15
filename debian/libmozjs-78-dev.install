@@ -1,0 +1,5 @@
+usr/bin/js${env:MOZJS_VERSION}
+usr/bin/js${env:MOZJS_VERSION}-config
+usr/include/mozjs-${env:MOZJS_VERSION}
+usr/lib/${DEB_HOST_MULTIARCH}/libmozjs-${env:MOZJS_VERSION}.so
+usr/lib/${DEB_HOST_MULTIARCH}/pkgconfig/mozjs-${env:MOZJS_VERSION}.pc
