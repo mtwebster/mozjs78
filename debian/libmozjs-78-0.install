@@ -1,1 +1,1 @@
-usr/lib/${DEB_HOST_MULTIARCH}/libmozjs-${env:MOZJS_VERSION}.so.*
+usr/lib/*/libmozjs-78.so.*

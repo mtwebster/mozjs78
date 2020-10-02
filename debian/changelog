@@ -1,3 +1,9 @@
+mozjs78 (78.2.0~linuxmint1) debbie; urgency=medium
+
+  * Test build
+
+ -- Michael Webster <miketwebster@gmail.com>  Fri, 02 Oct 2020 13:47:23 -0400
+
 mozjs78 (78.2.0-1~fakesync1) groovy; urgency=medium
 
   * Upload from Debian git to Ubuntu while the package is in NEW.

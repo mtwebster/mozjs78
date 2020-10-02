@@ -3,14 +3,13 @@ Section: libs
 Priority: optional
 Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
 Uploaders: @GNOME_TEAM@
-Build-Depends: debhelper-compat (= 13),
+Build-Depends: debhelper (>= 12.0),
                gnome-pkg-tools,
                cargo,
                clang,
                autoconf,
                autoconf2.13,
                automake,
-               libicu-dev (>= 67.1-4~),
                libreadline-dev,
                llvm,
                zlib1g-dev (>= 1:1.2.3),

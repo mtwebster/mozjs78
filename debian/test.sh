@@ -4,6 +4,8 @@
 : "${BUILDDIR:=./debian/build}"
 : "${DEB_HOST_ARCH:=$(dpkg --print-architecture)}"
 
+chmod +x "${BUILDDIR}/js/src/js"
+
 if "$BUILDDIR/js/src/js" -e 'print("Hello, world")'; then
 	echo "Smoke-test successful, continuing with full test suite"
 else

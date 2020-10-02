@@ -16,7 +16,7 @@ endif
 
 # This can be disabled if the bundled icu overtakes the system version,
 # or for backporting
-WITH_SYSTEM_ICU = yes
+WITH_SYSTEM_ICU = no
 
 export DEB_HOST_ARCH
 # mozjs' build process does not seem to be compatible with other shells
@@ -75,11 +75,8 @@ ifeq ($(DEB_HOST_ARCH),sh4)
         DEB_LDFLAGS_MAINT_APPEND += -no-pie
 endif
 
-ifeq ($(WITH_SYSTEM_ICU),yes)
-CONFIGURE_FLAGS += --with-system-icu
-else
+
 CONFIGURE_FLAGS += --without-system-icu
-endif
 
 # riscv64 doesn't seem to handle LTO properly, causing dwz to fail
 # see https://github.com/rust-lang/rust/issues/66118#issuecomment-551446657
@@ -110,7 +107,7 @@ override_dh_clean:
 	rm -rf third_party/python/psutil/build/ third_party/python/psutil/psutil/_*.so third_party/python/psutil/tmp/
 
 override_dh_autoreconf:
-	WITH_SYSTEM_ICU=$(WITH_SYSTEM_ICU) dh_autoreconf $(CURDIR)/debian/autogen.sh
+	WITH_SYSTEM_ICU=no dh_autoreconf $(CURDIR)/debian/autogen.sh
 
 # dh_auto_configure does not properly handle autoconf2.13 generated configure
 # scripts, so we call configure ourselves.
@@ -125,9 +122,6 @@ CXX := $(DEB_HOST_GNU_TYPE)-g++
 endif
 
 override_dh_auto_configure:
-ifneq ($(WITH_SYSTEM_ICU),yes)
-	VERBOSE=1 $(PYTHON3) intl/icu_sources_data.py "$(CURDIR)"
-endif
 	mkdir -p $(BUILDDIR)
 	cd $(BUILDDIR); \
 	if env \
@@ -184,3 +178,5 @@ ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
 	SRCDIR=${SRCDIR} BUILDDIR=${BUILDDIR} DEB_HOST_ARCH=${DEB_HOST_ARCH} $(CURDIR)/debian/test.sh $(EXCLUDED_TESTS)
 endif
 endif
+
+override_dh_dwz:
