@@ -17,11 +17,11 @@ assertEq(timeZoneName(), "Eastern European Summer Time");
 setTimeZone("::Europe/London"); // two colons, invalid
 assertEq(timeZoneName(), "Coordinated Universal Time");
 
-setTimeZone("/usr/share/zoneinfo/America/Chicago");
-assertEq(timeZoneName(), "GMT-06:00");
+setTimeZone("/this-part-is-ignored/zoneinfo/America/Chicago");
+assertEq(timeZoneName(), "Central Daylight Time");
 
-setTimeZone(":/usr/share/zoneinfo/America/Phoenix");
-assertEq(timeZoneName(), "GMT-07:00");
+setTimeZone(":/this-part-is-ignored/zoneinfo/America/Phoenix");
+assertEq(timeZoneName(), "Mountain Standard Time");
 
 setTimeZone("::/this-part-is-ignored/zoneinfo/America/Los_Angeles"); // two colons, invalid
 assertEq(timeZoneName(), "Coordinated Universal Time");

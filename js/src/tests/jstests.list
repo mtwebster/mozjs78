@@ -673,13 +673,6 @@ fails-if(xulRuntime.debian.DEB_HOST_ARCH.match(/^armel$/)) script test262/built-
 # Assumes little-endian IEEE representation of floating point numbers
 fails-if(xulRuntime.debian.DEB_HOST_ARCH_ENDIAN=="big") script test262/built-ins/TypedArray/prototype/set/typedarray-arg-set-values-same-buffer-other-type.js
 
-# These tests fails when using system ICU because the related bug has been fixed only when using local ICU
-# See https://bugzilla.mozilla.org/show_bug.cgi?id=1346211#c7
-# https://hg.mozilla.org/mozilla-central/rev/7b1a3a49547d
-skip script non262/Date/time-zones-historic.js
-skip script non262/Date/time-zones-imported.js
-skip script non262/Intl/DateTimeFormat/timeZone_backward_links.js
-
 ###########################################################
 # Tests disabled due to issues in test262 importer script #
 ###########################################################

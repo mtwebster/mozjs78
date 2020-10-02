@@ -14,8 +14,4 @@ tests-Use-DEB_HOST_ARCH_BITS-to-skip-some-tests-on-64-bit.patch
 tests-Expect-a-test-to-fail-on-big-endian.patch
 sdk-mozjs68-import-a-patch-to-workaround-arm-compilation-.patch
 TestingFunctions-Update-ICU-s-default-tz-when-setting-TZ.patch
-time-zone-path-test-Update-for-what-our-system-ICU-return.patch
-tests-Adapt-formatted-strings-results-to-system-ICU.patch
-Skip-time-zone-tests-that-fails-with-system-ICU.patch
-Skip-another-timezone-related-test-that-fails-with-system.patch
 Add-riscv64-support.patch
